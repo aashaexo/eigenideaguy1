@@ -1,0 +1,9 @@
+{
+  "name": "eigenideaguy",
+  "version": "1.0.0",
+  "description": "EigenCompute opportunity analyzer",
+  "private": true,
+  "engines": {
+    "node": ">=18"
+  }
+}

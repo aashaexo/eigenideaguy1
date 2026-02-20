@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>EigenIdeaGuy — Make your idea better with EigenCompute</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg:     #0a0a0a;
+  --green:  #33ff00;
+  --dim:    #1a3a0f;
+  --muted:  #3d5c35;
+  --text:   #c8e8c0;
+  --amber:  #ffb000;
+  --red:    #ff3333;
+  --border: rgba(51,255,0,0.12);
+  --glow:   rgba(51,255,0,0.35);
+  --f:      'JetBrains Mono', monospace;
+}
+
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:var(--f);
+  font-size:13px;
+  line-height:1.7;
+  min-height:100vh;
+}
+
+/* subtle scanlines */
+body::before{
+  content:'';
+  position:fixed;inset:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.1) 3px,rgba(0,0,0,0.1) 4px);
+  pointer-events:none;z-index:9999;opacity:0.35;
+}
+
+.wrap{max-width:580px;margin:0 auto;padding:56px 24px 72px;}
+
+header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:64px;
+  opacity:0;animation:up 0.4s ease 0.05s forwards;
+}
+
+.logo{font-size:11px;font-weight:700;color:var(--green);letter-spacing:0.22em;text-shadow:0 0 8px var(--glow);}
+.powered{font-size:10px;color:var(--dim);letter-spacing:0.08em;}
+
+.hero{margin-bottom:40px;opacity:0;animation:up 0.4s ease 0.15s forwards;}
+
+h1{
+  font-size:clamp(22px,4vw,32px);
+  font-weight:700;
+  color:#fff;
+  line-height:1.25;
+  letter-spacing:-0.01em;
+  margin-bottom:14px;
+}
+
+h1 em{font-style:normal;color:var(--green);text-shadow:0 0 14px var(--glow);}
+
+.sub{font-size:12px;color:var(--muted);line-height:1.8;max-width:440px;}
+.sub strong{color:var(--text);font-weight:500;}
+
+.input-block{opacity:0;animation:up 0.4s ease 0.28s forwards;}
+
+.box{
+  border:1px solid var(--border);
+  background:rgba(51,255,0,0.015);
+  margin-bottom:10px;
+  transition:border-color 0.2s;
+}
+.box:focus-within{border-color:rgba(51,255,0,0.32);background:rgba(51,255,0,0.025);}
+
+.box-top{
+  padding:12px 14px 0;
+  font-size:10px;color:var(--muted);
+  letter-spacing:0.06em;
+  display:flex;align-items:center;gap:6px;
+}
+.box-top .dollar{color:var(--green);}
+
+textarea{
+  display:block;width:100%;
+  background:transparent;border:none;outline:none;resize:none;
+  padding:8px 14px 14px;
+  font-family:var(--f);font-size:13px;
+  color:#fff;line-height:1.65;
+  min-height:110px;
+  caret-color:var(--green);
+}
+textarea::placeholder{color:var(--dim);}
+
+.box-foot{
+  padding:7px 14px;
+  border-top:1px solid var(--border);
+  display:flex;justify-content:space-between;align-items:center;
+}
+.chars{font-size:10px;color:var(--dim);}
+.hint{font-size:10px;color:var(--dim);}
+.hint kbd{border:1px solid var(--muted);padding:1px 4px;font-family:var(--f);font-size:9px;color:var(--muted);}
+
+button.run{
+  width:100%;padding:13px;
+  background:transparent;
+  border:1px solid var(--green);
+  color:var(--green);
+  font-family:var(--f);font-size:11px;font-weight:700;
+  letter-spacing:0.2em;text-transform:uppercase;
+  cursor:pointer;
+  text-shadow:0 0 8px var(--glow);
+  position:relative;overflow:hidden;
+  transition:color 0.2s;
+}
+button.run::after{
+  content:'';position:absolute;inset:0;
+  background:var(--green);
+  transform:translateY(100%);
+  transition:transform 0.2s ease;z-index:0;
+}
+button.run:hover::after{transform:translateY(0);}
+button.run:hover{color:var(--bg);text-shadow:none;}
+button.run:disabled{opacity:0.2;pointer-events:none;}
+button.run span{position:relative;z-index:1;}
+
+.error{
+  display:none;margin-top:10px;
+  padding:9px 12px;
+  border:1px solid rgba(255,51,51,0.22);
+  font-size:11px;color:var(--red);
+  background:rgba(255,51,51,0.04);
+  gap:7px;align-items:flex-start;
+}
+.error.show{display:flex;animation:up 0.2s ease both;}
+.ep{flex-shrink:0;}
+
+/* loading steps */
+.loading{display:none;margin-top:36px;flex-direction:column;gap:9px;}
+.loading.show{display:flex;animation:up 0.3s ease both;}
+
+.ls{
+  display:flex;align-items:center;gap:10px;
+  font-size:11px;color:var(--dim);
+  opacity:0;transition:opacity 0.25s,color 0.25s;
+}
+.ls.active{opacity:1;color:var(--muted);}
+.ls.done{opacity:1;color:var(--green);}
+
+.dot{width:5px;height:5px;flex-shrink:0;border-radius:50%;background:var(--dim);}
+.ls.active .dot{background:var(--amber);box-shadow:0 0 4px var(--amber);animation:bl 0.8s infinite;}
+.ls.done .dot{background:var(--green);box-shadow:0 0 4px var(--green);}
+
+@keyframes bl{0%,100%{opacity:1}50%{opacity:0.15}}
+
+/* result */
+.result{
+  display:none;margin-top:44px;
+  flex-direction:column;
+  border:1px solid var(--border);
+}
+.result.show{display:flex;animation:up 0.4s ease both;}
+
+.r-top{
+  padding:18px 18px 16px;
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:flex-start;justify-content:space-between;gap:14px;
+}
+.r-top-left{flex:1;}
+.r-lbl{font-size:10px;color:var(--muted);letter-spacing:0.14em;margin-bottom:7px;}
+.r-idea{font-size:14px;color:#fff;font-weight:500;line-height:1.4;}
+
+.verdict{
+  flex-shrink:0;text-align:center;
+  padding:9px 12px;border:1px solid var(--border);
+  min-width:80px;
+}
+.vi{font-size:13px;font-weight:700;display:block;margin-bottom:3px;font-family:var(--f);letter-spacing:0.05em;}
+.vi.g{color:var(--green);text-shadow:0 0 8px var(--glow);}
+.vi.y{color:var(--amber);text-shadow:0 0 8px rgba(255,176,0,0.5);}
+.vi.r{color:var(--red);text-shadow:0 0 8px rgba(255,51,51,0.5);}
+.vt{font-size:9px;letter-spacing:0.14em;text-transform:uppercase;display:block;}
+.vt.g{color:var(--green);}
+.vt.y{color:var(--amber);}
+.vt.r{color:var(--red);}
+
+.rs{padding:16px 18px;border-bottom:1px solid var(--border);font-size:12px;}
+.rs:last-of-type{border-bottom:none;}
+.rl{font-size:10px;color:var(--muted);letter-spacing:0.14em;text-transform:uppercase;margin-bottom:10px;}
+.rt{color:var(--muted);line-height:1.75;}
+
+/* pattern tag */
+.pattern-tag{
+  display:inline-block;
+  font-size:10px;font-weight:700;
+  letter-spacing:0.1em;text-transform:uppercase;
+  padding:3px 10px;
+  border:1px solid rgba(51,255,0,0.25);
+  background:rgba(51,255,0,0.05);
+  color:var(--green);
+  margin-bottom:10px;
+}
+
+.gaps{display:flex;flex-direction:column;gap:10px;}
+
+.gap{
+  padding:11px 13px;
+  border-left:2px solid var(--dim);
+  background:rgba(51,255,0,0.018);
+}
+.gq{color:var(--amber);font-size:11px;margin-bottom:6px;line-height:1.55;display:flex;gap:6px;}
+.ga{color:var(--muted);font-size:11px;line-height:1.65;display:flex;gap:6px;}
+.garrow{color:var(--green);flex-shrink:0;}
+
+.not-rel{
+  padding:10px 12px;
+  border-left:2px solid rgba(255,176,0,0.4);
+  background:rgba(255,176,0,0.03);
+  color:var(--muted);font-size:11px;line-height:1.7;
+}
+
+.diff-row{display:flex;align-items:center;gap:11px;}
+.dp{
+  font-size:10px;font-weight:700;letter-spacing:0.14em;
+  text-transform:uppercase;padding:4px 11px;border:1px solid;flex-shrink:0;
+}
+.dp.Easy  {color:var(--green);border-color:var(--dim);background:rgba(51,255,0,0.04);}
+.dp.Medium{color:var(--amber);border-color:rgba(255,176,0,0.18);background:rgba(255,176,0,0.04);}
+.dp.Hard  {color:var(--red);border-color:rgba(255,51,51,0.18);background:rgba(255,51,51,0.04);}
+.dw{color:var(--muted);font-size:11px;line-height:1.6;}
+
+.impact{
+  color:#fff;font-size:13px;font-weight:500;line-height:1.55;
+  padding-left:11px;border-left:2px solid var(--green);
+}
+
+.cta-row{
+  padding:14px 18px;border-top:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  background:rgba(51,255,0,0.018);
+}
+.cta-copy{font-size:10px;color:var(--dim);font-style:italic;}
+.cta-btn{
+  display:inline-block;padding:8px 16px;
+  border:1px solid var(--green);color:var(--green);
+  text-decoration:none;font-family:var(--f);
+  font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;
+  text-shadow:0 0 6px var(--glow);white-space:nowrap;
+  position:relative;overflow:hidden;transition:color 0.2s;
+}
+.cta-btn::after{
+  content:'';position:absolute;inset:0;
+  background:var(--green);
+  transform:translateY(100%);transition:transform 0.2s ease;z-index:0;
+}
+.cta-btn:hover::after{transform:translateY(0);}
+.cta-btn:hover{color:var(--bg);text-shadow:none;}
+.cta-btn span{position:relative;z-index:1;}
+
+footer{
+  margin-top:56px;padding-top:16px;
+  border-top:1px solid var(--border);
+  display:flex;justify-content:space-between;align-items:center;
+  font-size:10px;color:var(--dim);
+  opacity:0;animation:up 0.4s ease 0.5s forwards;
+}
+
+@keyframes up{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+
+@media(max-width:480px){
+  .r-top{flex-direction:column;}
+  .verdict{width:100%;}
+  .cta-row{flex-direction:column;align-items:flex-start;}
+  footer{flex-direction:column;gap:6px;}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <span class="logo">EIGENIDEAGUY</span>
+    <span class="powered">eigencompute analyzer</span>
+  </header>
+
+  <div class="hero">
+    <h1>what's the idea? bro.<br><em>let's make it better with eigencompute.</em></h1>
+    <p class="sub">
+      Paste your idea. We'll tell you exactly <strong>where EigenCompute makes it stronger.</strong>
+    </p>
+  </div>
+
+  <div class="input-block">
+    <div class="box">
+      <div class="box-top"><span class="dollar">$</span><span>describe your idea</span></div>
+      <textarea id="idea" placeholder="e.g. An AI agent that manages crypto portfolios and executes trades on behalf of users..." maxlength="1000"></textarea>
+      <div class="box-foot">
+        <span class="chars" id="chars">0 / 1000</span>
+        <span class="hint"><kbd>⌘</kbd>+<kbd>↵</kbd> to run</span>
+      </div>
+    </div>
+
+    <button class="run" id="runBtn" onclick="go()">
+      <span>Scan for trust gaps →</span>
+    </button>
+
+    <div class="error" id="err">
+      <span class="ep">[err]</span>
+      <span id="errMsg"></span>
+    </div>
+  </div>
+
+  <div class="loading" id="loading">
+    <div class="ls" id="s0"><div class="dot"></div><span>Parsing your idea</span></div>
+    <div class="ls" id="s1"><div class="dot"></div><span>Identifying trust gaps</span></div>
+    <div class="ls" id="s2"><div class="dot"></div><span>Mapping EigenCompute patterns</span></div>
+    <div class="ls" id="s3"><div class="dot"></div><span>Estimating implementation effort</span></div>
+    <div class="ls" id="s4"><div class="dot"></div><span>Writing report</span></div>
+  </div>
+
+  <div class="result" id="result">
+    <div class="r-top">
+      <div class="r-top-left">
+        <div class="r-lbl">// your idea</div>
+        <div class="r-idea" id="rIdea"></div>
+      </div>
+      <div class="verdict">
+        <span class="vi" id="vIcon"></span>
+        <span class="vt" id="vText"></span>
+      </div>
+    </div>
+
+    <div class="rs">
+      <div class="rl">// assessment</div>
+      <div class="rt" id="rAssess"></div>
+    </div>
+
+    <div class="rs" id="rGapsWrap">
+      <div class="rl">// trust gaps & fixes</div>
+      <div id="rPattern"></div>
+      <div class="gaps" id="rGaps"></div>
+    </div>
+
+    <div class="rs" id="rNotRelWrap" style="display:none">
+      <div class="rl">// how to make it work with eigencompute</div>
+      <div class="not-rel" id="rNotRel"></div>
+    </div>
+
+    <div class="rs" id="rDiffWrap">
+      <div class="rl">// how hard to build</div>
+      <div class="diff-row">
+        <div class="dp" id="rDiff"></div>
+        <div class="dw" id="rDiffWhy"></div>
+      </div>
+    </div>
+
+    <div class="rs" id="rImpactWrap">
+      <div class="rl">// what changes for users</div>
+      <div class="impact" id="rImpact"></div>
+    </div>
+
+    <div class="cta-row">
+      <span class="cta-copy">$ ecloud compute app deploy --verified</span>
+      <a class="cta-btn" href="https://docs.eigencloud.xyz/eigencompute/get-started/quickstart" target="_blank">
+        <span>Deploy on EigenCompute →</span>
+      </a>
+    </div>
+  </div>
+
+  <footer>
+    <span>eigenideaguy · 2026</span>
+    <span>anthropic claude</span>
+  </footer>
+
+</div>
+<script>
+const $ = id => document.getElementById(id);
+
+$('idea').addEventListener('input', function(){
+  $('chars').textContent = this.value.length + ' / 1000';
+});
+$('idea').addEventListener('keydown', e => {
+  if(e.key==='Enter'&&(e.metaKey||e.ctrlKey)) go();
+});
+
+let stepTimer = null;
+function startSteps(){
+  ['s0','s1','s2','s3','s4'].forEach(s=>$(s).className='ls');
+  let i=0;
+  function next(){
+    if(i>0) $('s'+(i-1)).className='ls done';
+    if(i<5){ $('s'+i).className='ls active'; i++; stepTimer=setTimeout(next,650); }
+  }
+  next();
+}
+function doneSteps(){
+  clearTimeout(stepTimer);
+  ['s0','s1','s2','s3','s4'].forEach(s=>$(s).className='ls done');
+}
+
+async function go(){
+  const idea = $('idea').value.trim();
+  $('err').classList.remove('show');
+  $('result').classList.remove('show');
+
+  if(idea.length < 20){
+    $('errMsg').textContent = 'Tell us a bit more — at least 20 characters.';
+    $('err').classList.add('show');
+    return;
+  }
+
+  $('runBtn').disabled = true;
+  $('loading').classList.add('show');
+  startSteps();
+
+  try {
+    const res = await fetch('/api/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ idea }),
+    });
+
+    if(!res.ok){
+      const e = await res.json().catch(()=>({}));
+      throw new Error(e?.error || 'Server error ' + res.status);
+    }
+
+    const data = await res.json();
+    const raw  = data?.content?.[0]?.text || '';
+
+    let r;
+    try { r = JSON.parse(raw); }
+    catch {
+      const m = raw.match(/\{[\s\S]*\}/);
+      if(m) r = JSON.parse(m[0]);
+      else throw new Error('Could not parse response. Try again.');
+    }
+
+    await new Promise(x => setTimeout(x, 250));
+    doneSteps();
+    setTimeout(()=>$('loading').classList.remove('show'), 200);
+    $('runBtn').disabled = false;
+    render(r);
+
+  } catch(e) {
+    doneSteps();
+    $('loading').classList.remove('show');
+    $('runBtn').disabled = false;
+    $('errMsg').textContent = e.message || 'Something went wrong.';
+    $('err').classList.add('show');
+    console.error(e);
+  }
+}
+
+function render(r){
+  $('rIdea').textContent = r.idea_summary || '';
+
+  const vm = {
+    strong_fit: { i:'[OK]',   c:'g', t:'STRONG FIT' },
+    weak_fit:   { i:'[WEAK]', c:'y', t:'WEAK FIT'   },
+    not_a_fit:  { i:'[SKIP]', c:'r', t:'NOT A FIT'  },
+  };
+  const v = vm[r.eigencompute_fit] || vm.weak_fit;
+  $('vIcon').textContent = v.i; $('vIcon').className = 'vi '+v.c;
+  $('vText').textContent = v.t; $('vText').className = 'vt '+v.c;
+
+  $('rAssess').textContent = r.fit_reason || '';
+
+  // pattern tag
+  const rp = $('rPattern');
+  if(r.pattern_match && r.pattern_match !== 'None'){
+    rp.innerHTML = `<div class="pattern-tag">// ${esc(r.pattern_match)}</div>`;
+  } else {
+    rp.innerHTML = '';
+  }
+
+  // gaps
+  const gw=$('rGapsWrap'), gl=$('rGaps');
+  gl.innerHTML='';
+  if(r.trust_gaps && r.trust_gaps.length){
+    gw.style.display='';
+    r.trust_gaps.forEach((g,i)=>{
+      const d=document.createElement('div');d.className='gap';
+      d.innerHTML=`<div class="gq"><span style="flex-shrink:0;color:var(--muted)">${i+1}.</span>${esc(g.gap)}</div><div class="ga"><span class="garrow">→</span>${esc(g.fix)}</div>`;
+      gl.appendChild(d);
+    });
+  } else gw.style.display='none';
+
+  // not relevant / how to make it work
+  const nw=$('rNotRelWrap');
+  if(r.not_relevant_if){ nw.style.display=''; $('rNotRel').textContent=r.not_relevant_if; }
+  else nw.style.display='none';
+
+  // difficulty
+  const dw=$('rDiffWrap');
+  if(r.difficulty && r.eigencompute_fit!=='not_a_fit'){
+    dw.style.display='';
+    $('rDiff').textContent=r.difficulty; $('rDiff').className='dp '+r.difficulty;
+    $('rDiffWhy').textContent=r.difficulty_reason||'';
+  } else dw.style.display='none';
+
+  // impact
+  const iw=$('rImpactWrap');
+  if(r.user_impact && r.eigencompute_fit!=='not_a_fit'){
+    iw.style.display=''; $('rImpact').textContent=r.user_impact;
+  } else iw.style.display='none';
+
+  const el=$('result');
+  el.classList.add('show');
+  setTimeout(()=>el.scrollIntoView({behavior:'smooth',block:'start'}),80);
+}
+
+function esc(s){
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+</body>
+</html>
