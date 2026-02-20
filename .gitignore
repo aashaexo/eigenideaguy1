@@ -1,0 +1,10 @@
+# environment variables
+.env
+.env.local
+.env.production
+
+# dependencies
+node_modules/
+
+# vercel
+.vercel
